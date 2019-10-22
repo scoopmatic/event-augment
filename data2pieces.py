@@ -3,15 +3,17 @@ import sys
 import sentencepiece as spm
 
 sp = spm.SentencePieceProcessor()
-if len(sys.argv) > 2:
-        sp.Load(sys.argv[2])
+if len(sys.argv) > 3:
+        sp.Load(sys.argv[3])
 else:
         sp.Load("sentpiece/m.model")
 
+path = sys.argv[1] # ../game-report-generator/event2text/data/
+suffix = sys.argv[2] # "" / ".aug"
 
 for dataset in ['train', 'devel', 'test']:
-    with open("../game-report-generator/event2text/data/%s.input.pcs" % dataset, 'w') as out:
-        for line in open("../game-report-generator/event2text/data/%s.input" % dataset):
+    with open("%s%s.input%s.pcs" % (path,dataset,suffix), 'w') as out:
+        for line in open("%s%s.input%s" % (path,dataset,suffix)):
             done = []
             ignore = False
             for part in line.split(' '):
@@ -31,6 +33,6 @@ for dataset in ['train', 'devel', 'test']:
 
 
 for dataset in ['train', 'devel', 'test']:
-    with open("../game-report-generator/event2text/data/%s.output.pcs" % dataset, 'w') as out:
-        for line in open("../game-report-generator/event2text/data/%s.output" % dataset):
+    with open("%s%s.output%s.pcs" % (path,dataset,suffix), 'w') as out:
+        for line in open("%s%s.output%s" % (path,dataset,suffix)):
             print(' '.join(sp.EncodeAsPieces(line.strip())).strip(), file=out)
