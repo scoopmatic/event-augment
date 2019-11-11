@@ -2,7 +2,8 @@ import re
 import random
 import string
 
-EXPANSION_RATE = 0#40
+ORIGINAL_REPEAT = 4
+EXPANSION_RATE = 40
 
 firstnames = {'Aatu', 'Annukka', 'Balazs', 'Eero', 'Hannu', 'Ilari', 'Jani', 'Janne', 'Jarkko', 'Jason', 'Joonas', 'Juha', 'Jukka', 'Jussi', 'Kai', 'Lennart', 'Maija', 'Matt', 'Miikka', 'Mikko', 'Niclas', 'Niko', 'Patrick', 'Philip', 'Rico', 'Saku', 'Sami', 'Samuli', 'Semir', 'Stefan', 'Steve', 'Thomas', 'Tony', 'Tuulia', 'Ville'}
 cities = ['edmonton', 'espoon', 'helsingin', 'helsinki', 'hämeenlinna', 'joensuu', 'jyväskylä', 'kajaani', 'kirkkonumm', 'kuopio', 'kuopion', 'lahden', 'lahti', 'lappeenran', 'malmö', 'mikkeli', 'oulu', 'pori', 'rauma', 'tampere', 'tikkurila', 'vaasa']
@@ -78,15 +79,16 @@ for dataset in ['train','devel','test']:
 
         #print(input_subst)
         # Add original data
-        print(input.strip(), file=aug_input)
-        print(output.strip(), file=aug_output)
+        for o in range(ORIGINAL_REPEAT):
+            print(input.strip(), file=aug_input)
+            print(output.strip(), file=aug_output)
 
         # Check city references in output
         refs = [word for word in output.split() if re.search(r"\w+(ais(joukkue|ryhmä|et|ten))|(seura)\w*", word)]
         if refs:
-            for e in range(EXPANSION_RATE//4):
+            """for e in range(EXPANSION_RATE//4):
                 print(input.strip(), file=aug_input)
-                print(output.strip(), file=aug_output)
+                print(output.strip(), file=aug_output)"""
             continue
         refs = [word for word in output.split() if any([word.lower().startswith(city) for city in cities])]
         all_handled = True

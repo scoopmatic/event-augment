@@ -43,7 +43,7 @@ print(len(testset_games))
 for length in ['short','medium','long']:
     print("Preparing dataset", length)
     with open("data/test_manual_%s.input" % length,'w') as test_file:
-        with open("data/test_manual_%s_oov.input" % length,'w') as oov_test_file:
+        with open("data/test_manual_%s.oov.input" % length,'w') as oov_test_file:
             for i, game in sorted(testset_games):
                 teams = re.findall("<home> (.+) </home> <guest> (.+) </guest>", game[0])[0]
                 for j, row in enumerate(game):
