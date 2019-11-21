@@ -11,7 +11,6 @@ BS=128
 mkdir $model
 
 mkdir $data
-rm $data/prep_rev*
 
 #cat $data/train.all | cut -f 1 > $data/train.input
 #cat $data/train.all | cut -f 2 > $data/train.output
@@ -28,16 +27,16 @@ cd sentpiece
 ##python train.py ../sentpiece_corpus.txt $v
 cd ..
 #python data2pieces.py ../game-report-generator/event2text/data/ ""
-python data2pieces.py data/ ""
-python data2pieces.py data/ .aug
+##python data2pieces.py data/ ""
+##python data2pieces.py data/ .aug
 
-rm $data/prep_rev*
+#rm $data/prep_rev*
 #python OpenNMT-py/preprocess.py -train_src $data/train.input.pcs -train_tgt $data/train.output.pcs -valid_src $data/devel.input.pcs -valid_tgt $data/devel.output.pcs -save_data $data/prep -src_words_min_frequency 1 -tgt_words_min_frequency 1 -dynamic_dict --src_seq_length $inmax --tgt_seq_length $outmax
 #python OpenNMT-py/preprocess.py -train_src $data/train.input.aug.pcs -train_tgt $data/train.output.aug.pcs -valid_src $data/devel.input.aug.pcs -valid_tgt $data/devel.output.aug.pcs -save_data $data/prep -src_words_min_frequency 1 -tgt_words_min_frequency 1 -dynamic_dict --src_seq_length $inmax --tgt_seq_length $outmax
-python OpenNMT-py/preprocess.py -train_tgt $data/train.input.aug.pcs -train_src $data/train.output.aug.pcs -valid_tgt $data/devel.input.aug.pcs -valid_src $data/devel.output.aug.pcs -save_data $data/prep_rev -src_words_min_frequency 1 -tgt_words_min_frequency 1 -dynamic_dict --src_seq_length $outmax --tgt_seq_length $inmax
+#python OpenNMT-py/preprocess.py -train_tgt $data/train.input.aug.pcs -train_src $data/train.output.aug.pcs -valid_tgt $data/devel.input.aug.pcs -valid_src $data/devel.output.aug.pcs -save_data $data/prep_rev -src_words_min_frequency 1 -tgt_words_min_frequency 1 -dynamic_dict --src_seq_length $outmax --tgt_seq_length $inmax
 
-rm $model/rev_*
-python OpenNMT-py/train.py -seed 9001 -data $data/prep_rev -save_model $model/rev_model -encoder_type brnn -train_steps 12000 -valid_steps 500 -save_checkpoint_steps 500 -log_file training.log -early_stopping 3 -gpu_ranks 0 -optim adam -learning_rate 0.000125 -layers 2 -batch_size $BS -copy_attn -reuse_copy_attn -coverage_attn -copy_loss_by_seqlength
+#rm $model/rev_*
+#python OpenNMT-py/train.py -seed 9001 -data $data/prep_rev -save_model $model/rev_model -encoder_type brnn -train_steps 12000 -valid_steps 500 -save_checkpoint_steps 500 -log_file training.log -early_stopping 3 -gpu_ranks 0 -optim adam -learning_rate 0.000125 -layers 2 -batch_size $BS -copy_attn -reuse_copy_attn -coverage_attn -copy_loss_by_seqlength
 
 # Evaluate
 rm tmp/rev_eval.txt
