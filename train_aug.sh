@@ -22,7 +22,7 @@ mkdir $data
 #cat $data/test.all | cut -f 1 > $data/test.input
 #cat $data/test.all | cut -f 2 > $data/test.output
 
-python name_expansion.py
+#python name_expansion.py
 #cp -v event-augment/data/*aug $data/
 
 #for v in {100..5000..500} ; do
@@ -31,16 +31,16 @@ cd sentpiece
 ##python train.py ../sentpiece_corpus.txt $v
 cd ..
 #python data2pieces.py ../game-report-generator/event2text/data/ ""
-python data2pieces.py data/ ""
-python data2pieces.py data/ .aug
+##python data2pieces.py data/ ""
+##python data2pieces.py data/ .aug
 #cp -v event-augment/data/*pcs $data/
 
-rm $data/prep_fwd*
+##rm $data/prep_fwd*
 #python OpenNMT-py/preprocess.py -train_src $data/train.input.pcs -train_tgt $data/train.output.pcs -valid_src $data/devel.input.pcs -valid_tgt $data/devel.output.pcs -save_data $data/prep -src_words_min_frequency 1 -tgt_words_min_frequency 1 -dynamic_dict --src_seq_length $inmax --tgt_seq_length $outmax
-python OpenNMT-py/preprocess.py -train_src $data/train.input.aug.pcs -train_tgt $data/train.output.aug.pcs -valid_src $data/devel.input.aug.pcs -valid_tgt $data/devel.output.aug.pcs -save_data $data/prep_fwd -src_words_min_frequency 1 -tgt_words_min_frequency 1 -dynamic_dict --src_seq_length $inmax --tgt_seq_length $outmax
+##python OpenNMT-py/preprocess.py -train_src $data/train.input.aug.pcs -train_tgt $data/train.output.aug.pcs -valid_src $data/devel.input.aug.pcs -valid_tgt $data/devel.output.aug.pcs -save_data $data/prep_fwd -src_words_min_frequency 1 -tgt_words_min_frequency 1 -dynamic_dict --src_seq_length $inmax --tgt_seq_length $outmax
 
-rm $model/*
-python OpenNMT-py/train.py -seed 9001 -data $data/prep_fwd -save_model $model/model -encoder_type brnn -train_steps 12000 -valid_steps 500 -save_checkpoint_steps 500 -log_file training.log -early_stopping 3 -gpu_ranks 0 -optim adam -learning_rate 0.000125 -layers 2 -batch_size $BS -copy_attn -reuse_copy_attn -coverage_attn -copy_loss_by_seqlength
+##rm $model/*
+##python OpenNMT-py/train.py -seed 9001 -data $data/prep_fwd -save_model $model/model -encoder_type brnn -train_steps 12000 -valid_steps 500 -save_checkpoint_steps 500 -log_file training.log -early_stopping 3 -gpu_ranks 0 -optim adam -learning_rate 0.000125 -layers 2 -batch_size $BS -copy_attn -reuse_copy_attn -coverage_attn -copy_loss_by_seqlength
 
 # Evaluate
 rm tmp/eval.txt
@@ -50,10 +50,10 @@ cat $data/devel.output | sed "s/ – /–/g" |sed "s/ - /-/g" | sed "s/ — /—
 for i in {1000..12000..500} ;
 do
 echo "Evaluating step $i"
-python OpenNMT-py/translate.py -seed 10101 -gpu 0 -model $model/model_step_$i.pt -src $data/devel.input.pcs -output pred.txt.pcs -replace_unk -max_length 50 -batch_size $BS
-python event-augment/sentpiece/p2s.py pred.txt.pcs event-augment/sentpiece/m.model > pred.txt
-cat pred.txt | sed "s/ – /–/g" |sed "s/ - /-/g" | sed "s/ — /—/g" | sed "s/( /(/g" | sed "s/ )/)/g" > pred.txt.detok
-BLEU=$(perl OpenNMT-py/tools/multi-bleu.perl $data/devel.output.detok < pred.txt.detok)
+python OpenNMT-py/translate.py -seed 10101 -gpu 0 -model $model/model_step_$i.pt -src $data/devel.input.pcs -output tmp/pred.txt.pcs -replace_unk -max_length 50 -batch_size $BS
+python sentpiece/p2s.py tmp/pred.txt.pcs sentpiece/m.model > tmp/pred.txt
+cat tmp/pred.txt | sed "s/ – /–/g" |sed "s/ - /-/g" | sed "s/ — /—/g" | sed "s/( /(/g" | sed "s/ )/)/g" > tmp/pred.txt.detok
+BLEU=$(perl OpenNMT-py/tools/multi-bleu.perl $data/devel.output.detok < tmp/pred.txt.detok)
 echo $BLEU $i >> tmp/eval.txt
 echo $BLEU
 done
@@ -130,19 +130,37 @@ python data2pieces_single.py data/test_manual_short_oov.input
 
 
 # Manual test original entities
-for length in long medium short; do
-python OpenNMT-py/translate.py -seed 10101 -gpu 0 -model $BEST -src data/test_manual_$length.input.pcs -output tmp/test_pred_$length.txt.pcs -replace_unk -max_length 100 -batch_size $BS -min_length 25 -length_penalty wu -alpha $ALPHA -verbose |grep "PRED SCORE"|cut -d":" -f2 > tmp/test_scores_$length.txt
-python sentpiece/p2s.py tmp/test_pred_$length.txt.pcs sentpiece/m.model > tmp/test_pred_$length.txt
-cat tmp/test_pred_$length.txt | sed "s/ – /–/g" |sed "s/ - /-/g" | sed "s/ — /—/g" | sed "s/( /(/g" | sed "s/ )/)/g" > tmp/test_pred_$length.txt.detok
-paste test_scores_$length.txt test_pred_$length.txt.detok > tmp/test_scored_pred_$length.txt.detok
+for i in 1 2 3; do
+  length=$(echo "long medium short"|cut -d" " -f$i)
+  min_length=$(echo "25 15 0"|cut -d" " -f$i)
+  python OpenNMT-py/translate.py -seed 10101 -gpu 0 -model $BEST -src data/test_manual_$length.input.pcs -output tmp/test_pred_$length.txt.pcs -replace_unk -max_length 100 -batch_size $BS -min_length $min_length -length_penalty wu -alpha $ALPHA -verbose |grep "PRED SCORE"|cut -d":" -f2 > tmp/test_scores_$length.txt
+  python sentpiece/p2s.py tmp/test_pred_$length.txt.pcs sentpiece/m.model > tmp/test_pred_$length.txt
+  cat tmp/test_pred_$length.txt | sed "s/ – /–/g" |sed "s/ - /-/g" | sed "s/ — /—/g" | sed "s/( /(/g" | sed "s/ )/)/g" > tmp/test_pred_$length.txt.detok
+  paste test_scores_$length.txt test_pred_$length.txt.detok > tmp/test_scored_pred_$length.txt.detok
 done
 paste -d "\n" data/test_manual_long.input tmp/test_scored_pred_short.txt.detok tmp/test_scored_pred_medium.txt.detok tmp/test_scored_pred_long.txt.detok /dev/null |python postprocessing.py > output/manual_eval.txt
 
+# Manual test original entities with varying seed
+#for i in 1 2 3; do
+#  length=$(echo "long medium short"|cut -d" " -f$i)
+#  min_length=$(echo "25 15 0"|cut -d" " -f$i)
+#  for s in 1 2 3 4 5; do
+#    seed=$(echo "10101 20202 30303 939 123091"|cut -d" " -f$s)
+#    python OpenNMT-py/translate.py -seed $seed -gpu 0 -model $BEST -src data/test_manual_$length.input.pcs -output tmp/test_pred_$length.$s.txt.pcs -replace_unk -max_length 100 -batch_size $BS -min_length $min_length -length_penalty wu -alpha $ALPHA -verbose |grep "PRED SCORE"|cut -d":" -f2 > tmp/test_scores_$length.$s.txt
+#    python sentpiece/p2s.py tmp/test_pred_$length.$s.txt.pcs sentpiece/m.model > tmp/test_pred_$length.$s.txt
+#  done
+#  paste -d "\n" tmp/test_pred_$length.?.txt | sed "s/ – /–/g" |sed "s/ - /-/g" | sed "s/ — /—/g" | sed "s/( /(/g" | sed "s/ )/)/g" > tmp/test_pred_$length.txt.detok
+#  paste -d "\n" tmp/test_scores_$length.?.txt > test_scores_$length.txt
+#  paste test_scores_$length.txt test_pred_$length.txt.detok > tmp/test_scored_pred_$length.txt.detok
+#done
+
 # Manual test OOV entities
-for length in long medium short; do
-python OpenNMT-py/translate.py -seed 10101 -gpu 0 -model $BEST -src data/test_manual_$length.oov.input.pcs -output tmp/test_pred_$length.oov.txt.pcs -replace_unk -max_length 100 -batch_size $BS -min_length 25 -length_penalty wu -alpha $ALPHA -verbose |grep "PRED SCORE"|cut -d":" -f2 > tmp/test_scores_$length.txt
-python sentpiece/p2s.py tmp/test_pred_$length.oov.txt.pcs sentpiece/m.model > tmp/test_pred_$length.oov.txt
-cat tmp/test_pred_$length.oov.txt | sed "s/ – /–/g" |sed "s/ - /-/g" | sed "s/ — /—/g" | sed "s/( /(/g" | sed "s/ )/)/g" > tmp/test_pred_$length.oov.txt.detok
-paste test_scores_$length.oov.txt test_pred_$length.oov.txt.detok > tmp/test_scored_pred_$length.oov.txt.detok
+for i in 1 2 3; do
+  length=$(echo "long medium short"|cut -d" " -f$i)
+  min_length=$(echo "25 15 0"|cut -d" " -f$i)
+  python OpenNMT-py/translate.py -seed 10101 -gpu 0 -model $BEST -src data/test_manual_$length.oov.input.pcs -output tmp/test_pred_$length.oov.txt.pcs -replace_unk -max_length 100 -batch_size $BS -min_length $min_length -length_penalty wu -alpha $ALPHA -verbose |grep "PRED SCORE"|cut -d":" -f2 > tmp/test_scores_$length.txt
+  python sentpiece/p2s.py tmp/test_pred_$length.oov.txt.pcs sentpiece/m.model > tmp/test_pred_$length.oov.txt
+  cat tmp/test_pred_$length.oov.txt | sed "s/ – /–/g" |sed "s/ - /-/g" | sed "s/ — /—/g" | sed "s/( /(/g" | sed "s/ )/)/g" > tmp/test_pred_$length.oov.txt.detok
+  paste test_scores_$length.oov.txt test_pred_$length.oov.txt.detok > tmp/test_scored_pred_$length.oov.txt.detok
 done
 paste -d "\n" data/test_manual_long.oov.input tmp/test_scored_pred_short.oov.txt.detok tmp/test_scored_pred_medium.oov.txt.detok tmp/test_scored_pred_long.oov.txt.detok /dev/null |python postprocessing.py > output/manual_eval_oov.txt
