@@ -1,3 +1,3 @@
 [submodule "sentpiece"]
 	path = sentpiece
-	url = https://github.com/sronnqvist/sentpiece.git
+	url = https://github.com/sronnqvist/sentpiece
